@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>বছরব্যাপী শিক্ষা ও দিনের কাজের ট্র্যাকার</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <style>
+      body {
+        font-family: "Noto Sans Bengali", "Inter", sans-serif;
+        background-color: #eef2f7; /* Slightly cooler light blue */
+      }
+      .main-container {
+        max-width: 7xl;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 1rem;
+      }
+      @media (min-width: 768px) {
+        .main-container {
+          padding: 2rem;
+        }
+      }
+
+      /* Tab Styling */
+      .tabs {
+        display: flex;
+        margin-bottom: 1.5rem; /* 24px */
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+      }
+      .tab-button {
+        padding: 1rem 1.5rem; /* 16px 24px */
+        font-size: 1rem; /* 16px */
+        font-weight: 500;
+        color: #374151; /* gray-700 */
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        flex-grow: 1;
+        text-align: center;
+      }
+      .tab-button:not(:last-child) {
+        border-right: 1px solid #e5e7eb; /* gray-200 */
+      }
+      .tab-button.active {
+        background-color: #3b82f6; /* blue-500 */
+        color: white;
+      }
+      .tab-button .fas {
+        margin-right: 8px;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      .card {
+        background-color: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: grab; /* For draggable items */
+      }
+      .card:hover {
+        /* transform: translateY(-5px); // Keep hover effect subtle if dragging is main interaction */
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      }
+      .card.sortable-ghost {
+        /* Style for the ghost element during drag */
+        opacity: 0.4;
+        background: #c7d2fe;
+      }
+      .card-header {
+        border-bottom-width: 2px;
+        padding-bottom: 12px;
+        margin-bottom: 18px;
+        font-size: 1.6rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+      }
+      .card-header .fas {
+        margin-right: 12px;
+        font-size: 1.5rem;
+      }
+
+      .task-item-li {
+        padding: 16px 10px;
+        border-bottom: 1px solid #e5e7eb;
+        transition: background-color 0.3s ease, border-left-color 0.3s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: default; /* Regular tasks are not draggable individually */
+      }
+      .task-item-li:last-child {
+        border-bottom: none;
+      }
+      .task-info {
+        display: flex;
+        align-items: center;
+      }
+      .task-icon .fas {
+        margin-right: 12px;
+        flex-shrink: 0;
+        color: #3b82f6;
+        width: 24px;
+        text-align: center;
+      }
+      .task-text-content {
+        display: flex;
+        flex-direction: column;
+      }
+      .task-text {
+        font-weight: 500;
+        color: #1f2937;
+      }
+      .task-time,
+      .task-timer-display {
+        font-size: 0.85rem;
+        color: #6b7280;
+      }
+      .task-timer-display {
+        font-weight: 500;
+        color: #ef4444;
+      }
+
+      .task-item-li.completed {
+        background-color: #f0fdf4;
+        border-left: 5px solid #22c55e;
+        padding-left: 12px;
+      }
+      .completed .task-text {
+        text-decoration: line-through;
+        color: #4b5563;
+      }
+      .completed .task-time,
+      .completed .task-timer-display {
+        text-decoration: line-through;
+        color: #6b7280;
+      }
+      .task-item-li.time-up {
+        background-color: #fff1f2;
+        border-left: 5px solid #ef4444;
+        padding-left: 12px;
+      }
+      .time-up .task-text {
+        color: #991b1b;
+      }
+      .time-up .mark-btn {
+        background-color: #9ca3af !important;
+        cursor: not-allowed !important;
+      }
+
+      .task-actions button {
+        transition: all 0.2s ease-in-out;
+        font-weight: 500;
+        padding: 8px 12px;
+        font-size: 0.875rem;
+      }
+      .task-actions button .fas {
+        margin-right: 6px;
+      }
+      .task-actions button:hover {
+        transform: translateY(-1px);
+      }
+
+      .header-progress {
+        border-color: #10b981;
+        color: #047857;
+      }
+      .header-progress .fas {
+        color: #10b981;
+      }
+      .header-calendar {
+        border-color: #0ea5e9;
+        color: #0369a1;
+      }
+      .header-calendar .fas {
+        color: #0ea5e9;
+      }
+      .header-daily-goals {
+        border-color: #f59e0b;
+        color: #b45309;
+      }
+      .header-daily-goals .fas {
+        color: #f59e0b;
+      }
+      .header-report {
+        border-color: #ef4444;
+        color: #b91c1c;
+      }
+      .header-report .fas {
+        color: #ef4444;
+      }
+      .header-misc {
+        border-color: #6366f1;
+        color: #4338ca;
+      }
+      .header-misc .fas {
+        color: #6366f1;
+      }
+
+      .header-fajr {
+        border-color: #facc15;
+        color: #ca8a04;
+      }
+      .header-fajr .fas {
+        color: #facc15;
+      }
+      .header-morning {
+        border-color: #fb923c;
+        color: #ea580c;
+      }
+      .header-morning .fas {
+        color: #fb923c;
+      }
+      .header-noon {
+        border-color: #34d399;
+        color: #059669;
+      }
+      .header-noon .fas {
+        color: #34d399;
+      }
+      .header-afternoon {
+        border-color: #60a5fa;
+        color: #2563eb;
+      }
+      .header-afternoon .fas {
+        color: #60a5fa;
+      }
+      .header-night {
+        border-color: #a78bfa;
+        color: #7c3aed;
+      }
+      .header-night .fas {
+        color: #a78bfa;
+      }
+
+      #toast-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #22c55e;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.5s, visibility 0.5s, transform 0.5s;
+        transform: translateY(-20px);
+      }
+      #toast-notification.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      #completion-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+      #completion-modal.show {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal-content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+      }
+      #completion-modal.show .modal-content {
+        transform: scale(1);
+      }
+      .modal-content h3 {
+        font-size: 1.8rem;
+        color: #16a34a;
+        margin-bottom: 15px;
+      }
+      .modal-content p {
+        font-size: 1.1rem;
+        color: #374151;
+        margin-bottom: 25px;
+      }
+      .modal-close-btn {
+        background-color: #16a34a;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+      }
+      .modal-close-btn:hover {
+        background-color: #15803d;
+      }
+
+      .progress-bar-container {
+        width: 100%;
+        background-color: #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 8px;
+        height: 28px;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background-image: linear-gradient(to right, #10b981, #059669);
+        width: 0%;
+        border-radius: 10px;
+        transition: width 0.5s ease-in-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 20px;
+      }
+      @media (min-width: 640px) {
+        .calendar-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (min-width: 1024px) {
+        .calendar-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (min-width: 1280px) {
+        .calendar-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      .month-card {
+        background-color: #fdfdff;
+        border: 1px solid #e0e7ff;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        cursor: default;
+      }
+      .month-header {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0369a1;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #7dd3fc;
+      }
+      .learning-list {
+        list-style: none;
+        padding-left: 0;
+      }
+      .learning-list > li {
+        padding: 10px 0;
+        font-size: 0.95rem;
+        color: #374151;
+        border-bottom: 1px dashed #d1d5db;
+      }
+      .learning-list > li:last-child {
+        border-bottom: none;
+      }
+      .learning-list strong {
+        color: #075985;
+        display: block;
+        margin-bottom: 6px;
+        font-size: 1.05rem;
+      }
+      .learning-list ul {
+        list-style-type: none;
+        padding-left: 15px;
+        margin-top: 5px;
+      }
+      .learning-list ul li {
+        padding: 4px 0;
+        font-size: 0.9rem;
+        color: #4b5563;
+        position: relative;
+        padding-left: 15px;
+      }
+      .learning-list ul li::before {
+        content: "▹";
+        position: absolute;
+        left: 0;
+        color: #0ea5e9;
+        font-weight: bold;
+      }
+      .time-allocation-note {
+        background-color: #fffbeb;
+        color: #b45309;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+        font-size: 0.9rem;
+        border: 1px solid #fef3c7;
+        text-align: center;
+        cursor: default;
+      }
+      .time-allocation-note .fas {
+        margin-right: 8px;
+      }
+
+      #overdue-report-list li {
+        background-color: #fee2e2;
+        color: #991b1b;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        cursor: default;
+      }
+
+      .draggable-cards-container .card {
+        /* Ensure cards within draggable area have grab cursor */
+        cursor: grab;
+      }
+      .draggable-cards-container .card:active {
+        /* While dragging */
+        cursor: grabbing;
+      }
+
+      @media (max-width: 767px) {
+        /* Mobile specific tab styling */
+        .tabs {
+          flex-direction: column;
+          border-radius: 8px;
+        }
+        .tab-button {
+          border-right: none !important;
+          border-bottom: 1px solid #e5e7eb; /* gray-200 */
+        }
+        .tab-button:last-child {
+          border-bottom: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .card-header {
+          font-size: 1.3rem;
+        }
+        .task-text {
+          font-size: 0.9rem;
+        }
+        .task-time,
+        .task-timer-display {
+          font-size: 0.75rem;
+        }
+        .card {
+          padding: 15px;
+        }
+        .task-actions button {
+          padding: 6px 10px;
+          font-size: 0.75rem;
+        }
+        .task-actions button svg,
+        .task-actions button .fas {
+          width: 14px;
+          height: 14px;
+          margin-right: 4px;
+        }
+        #toast-notification {
+          padding: 10px 15px;
+          font-size: 0.9rem;
+        }
+        .modal-content {
+          padding: 20px;
+          width: 90%;
+        }
+        .modal-content h3 {
+          font-size: 1.5rem;
+        }
+        .modal-content p {
+          font-size: 1rem;
+        }
+        .month-header {
+          font-size: 1.1rem;
+        }
+        .learning-list li {
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body class="main-container">
+    <h1
+      class="text-3xl sm:text-4xl font-bold text-center mb-6 sm:mb-8 text-sky-800"
+    >
+      বছরব্যাপী শিক্ষা ও দিনের কাজের ট্র্যাকার
+    </h1>
+
+    <div class="tabs">
+      <button class="tab-button active" data-tab="daily-view">
+        <i class="fas fa-tasks"></i> দৈনিক চিত্র
+      </button>
+      <button class="tab-button" data-tab="yearly-plan">
+        <i class="fas fa-calendar-alt"></i> বার্ষিক পরিকল্পনা
+      </button>
+      <button class="tab-button" data-tab="reports-misc">
+        <i class="fas fa-chart-line"></i> রিপোর্ট ও অন্যান্য
+      </button>
+    </div>
+
+    <div id="daily-view" class="tab-content active">
+      <div
+        class="draggable-cards-container"
+        id="daily-view-draggable-container"
+      >
+        <div class="card" id="progress-card-wrapper" data-card-id="progress">
+          <h2 class="card-header header-progress">
+            <i class="fas fa-spinner fa-spin"></i> আজকের কাজের অগ্রগতি
+          </h2>
+          <div class="progress-bar-container">
+            <div id="daily-progress-bar" class="progress-bar-fill">0%</div>
+          </div>
+          <p id="progress-text" class="text-sm text-gray-600 mt-2 text-center">
+            আজকের কোনো কাজ এখনো সম্পন্ন হয়নি।
+          </p>
+        </div>
+
+        <div
+          class="card"
+          id="daily-yearly-goals-card-wrapper"
+          data-card-id="daily-yearly-goals"
+        >
+          <h2 class="card-header header-daily-goals">
+            <i class="fas fa-bullseye"></i> আজকের বার্ষিক লক্ষ্য (এ মাসের উপর
+            ভিত্তি করে)
+          </h2>
+          <ul id="daily-yearly-goals-list">
+            <p class="text-gray-500 text-sm p-2">
+              আজকের জন্য কোনো বার্ষিক লক্ষ্য লোড হয়নি অথবা এই মাসের জন্য কোনো
+              বিশেষ লক্ষ্য নেই।
+            </p>
+          </ul>
+        </div>
+
+        <div
+          class="card routine-block"
+          id="fajr-routine-card"
+          data-card-id="fajr-routine"
+        >
+          <h2 class="card-header header-fajr">
+            <i class="fas fa-mosque"></i> ফজরের পর (৪:৩০ AM - ৮:৩০ AM)
+          </h2>
+          <ul data-time-block="fajr">
+            <li
+              class="task-item-li"
+              id="task-fajr-namaz"
+              data-start="04:30"
+              data-end="04:50"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-pray"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">ফজরের নামাজ</span>
+                  <span class="task-time">(৪:৩০ AM - ৪:৫০ AM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-fajr-quran"
+              data-start="04:50"
+              data-end="05:20"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-book-quran"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">কোরআন তিলাওয়াত (৩০ মিনিট)</span>
+                  <span class="task-time">(৪:৫০ AM - ৫:২০ AM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-fajr-walk"
+              data-start="05:20"
+              data-end="05:50"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-walking"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">ওয়াক/এক্সারসাইজ (৩০ মিনিট)</span>
+                  <span class="task-time">(৫:২০ AM - ৫:৫০ AM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-fajr-breakfast"
+              data-start="05:50"
+              data-end="06:30"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-mug-hot"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">সকালের নাস্তা ও প্রস্তুতি</span>
+                  <span class="task-time">(৫:৫০ AM - ৬:৩০ AM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-fajr-study"
+              data-start="06:30"
+              data-end="08:30"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-book-open"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">একাডেমিক পড়াশোনা (২ ঘণ্টা)</span>
+                  <span class="task-time">(৬:৩০ AM - ৮:৩০ AM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div
+          class="card routine-block"
+          id="morning-routine-card"
+          data-card-id="morning-routine"
+        >
+          <h2 class="card-header header-morning">
+            <i class="fas fa-sun"></i> সকাল (৮:৩০ AM – ১:০০ PM)
+          </h2>
+          <ul data-time-block="morning">
+            <li
+              class="task-item-li"
+              id="task-morning-study"
+              data-start="08:30"
+              data-end="13:00"
+            >
+              <div class="task-info">
+                <div class="task-icon">
+                  <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="task-text-content">
+                  <span class="task-text"
+                    >একাডেমিক পড়াশোনা (৪ ঘণ্টা ৩০ মিনিট)</span
+                  >
+                  <span class="task-time">(৮:৩০ AM - ১:০০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div
+          class="card routine-block"
+          id="noon-routine-card"
+          data-card-id="noon-routine"
+        >
+          <h2 class="card-header header-noon">
+            <i class="fas fa-cloud-sun"></i> দুপুর (১:০০ PM – ৩:৩০ PM)
+          </h2>
+          <ul data-time-block="noon">
+            <li
+              class="task-item-li"
+              id="task-noon-namaz"
+              data-start="13:00"
+              data-end="13:20"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-pray"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">যোহরের নামাজ</span>
+                  <span class="task-time">(১:০০ PM - ১:২০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-noon-lunch"
+              data-start="13:20"
+              data-end="14:30"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-utensils"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">দুপুরের খাবার ও বিশ্রাম</span>
+                  <span class="task-time">(১:২০ PM - ২:৩০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-noon-study"
+              data-start="14:30"
+              data-end="15:30"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-book"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">একাডেমিক পড়াশোনা (১ ঘণ্টা)</span>
+                  <span class="task-time">(২:৩০ PM - ৩:৩০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div
+          class="card routine-block"
+          id="afternoon-routine-card"
+          data-card-id="afternoon-routine"
+        >
+          <h2 class="card-header header-afternoon">
+            <i class="fas fa-cloud"></i> বিকেল (৩:৩০ PM – ৬:০০ PM)
+          </h2>
+          <ul data-time-block="afternoon">
+            <li
+              class="task-item-li"
+              id="task-afternoon-namaz"
+              data-start="15:30"
+              data-end="15:50"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-pray"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">আসরের নামাজ</span>
+                  <span class="task-time">(৩:৩০ PM - ৩:৫০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-afternoon-study"
+              data-start="15:50"
+              data-end="17:20"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-pencil-alt"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text"
+                    >একাডেমিক পড়াশোনা (১ ঘণ্টা ৩০ মিনিট)</span
+                  >
+                  <span class="task-time">(৩:৫০ PM - ৫:২০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-afternoon-webdev"
+              data-start="17:20"
+              data-end="18:00"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-laptop-code"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">ওয়েব ডেভেলপমেন্ট (৪০ মিনিট)</span>
+                  <span class="task-time">(৫:২০ PM - ৬:০০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div
+          class="card routine-block"
+          id="night-routine-card"
+          data-card-id="night-routine"
+        >
+          <h2 class="card-header header-night">
+            <i class="fas fa-moon"></i> রাত (৭:৩০ PM – ৯:০০ PM)
+          </h2>
+          <ul data-time-block="night">
+            <li
+              class="task-item-li"
+              id="task-night-namaz"
+              data-start="19:30"
+              data-end="19:50"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-pray"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">এশার নামাজ</span>
+                  <span class="task-time">(৭:৩০ PM - ৭:৫০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-night-webdev"
+              data-start="19:50"
+              data-end="20:20"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-code"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">ওয়েব ডেভেলপমেন্ট (৩০ মিনিট)</span>
+                  <span class="task-time">(৭:৫০ PM - ৮:২০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-night-dinner"
+              data-start="20:20"
+              data-end="20:50"
+            >
+              <div class="task-info">
+                <div class="task-icon">
+                  <i class="fas fa-concierge-bell"></i>
+                </div>
+                <div class="task-text-content">
+                  <span class="task-text">রাতের খাবার</span>
+                  <span class="task-time">(৮:২০ PM - ৮:৫০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+            <li
+              class="task-item-li"
+              id="task-night-sleep-prep"
+              data-start="20:50"
+              data-end="21:00"
+            >
+              <div class="task-info">
+                <div class="task-icon"><i class="fas fa-bed"></i></div>
+                <div class="task-text-content">
+                  <span class="task-text">ঘুমের প্রস্তুতি</span>
+                  <span class="task-time">(৮:৫০ PM - ৯:০০ PM)</span>
+                  <span class="task-timer-display">০০:০০:০০</span>
+                </div>
+              </div>
+              <div class="task-actions flex-shrink-0 ml-2">
+                <button
+                  class="mark-btn flex items-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i> সম্পন্ন
+                </button>
+                <button
+                  class="unmark-btn flex items-center bg-slate-500 hover:bg-slate-600 text-white rounded-lg shadow-md hover:shadow-lg hidden"
+                >
+                  <i class="fas fa-times"></i> অসম্পন্ন
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="yearly-plan" class="tab-content">
+      <div class="card" data-card-id="yearly-calendar-card">
+        <h2 class="card-header header-calendar">
+          <i class="fas fa-calendar-alt"></i> বার্ষিক শিক্ষা পরিকল্পনা (জুন ২০২৫
+          - মে ২০২৬)
+        </h2>
+        <div id="yearly-plan-calendar" class="calendar-grid"></div>
+      </div>
+    </div>
+
+    <div id="reports-misc" class="tab-content">
+      <div
+        class="draggable-cards-container"
+        id="reports-misc-draggable-container"
+      >
+        <div
+          class="card"
+          id="overdue-report-card-wrapper"
+          data-card-id="overdue-report"
+        >
+          <h2 class="card-header header-report">
+            <i class="fas fa-exclamation-triangle"></i> সময় শেষ হওয়া কাজের
+            রিপোর্ট
+          </h2>
+          <ul id="overdue-report-list" class="mt-2 space-y-1 text-sm">
+            <li id="no-overdue-placeholder">
+              এখনো কোনো কাজ সময় অতিক্রম করেনি।
+            </li>
+          </ul>
+        </div>
+        <div
+          class="card"
+          id="study-time-card-wrapper"
+          data-card-id="study-time-note"
+        >
+          <h2 class="card-header header-misc">
+            <i class="fas fa-info-circle"></i> অন্যান্য তথ্য
+          </h2>
+          <div class="time-allocation-note">
+            <i class="fas fa-stopwatch"></i> বার্ষিক লক্ষ্যের জন্য প্রস্তাবিত
+            দৈনিক সময়: <strong id="suggested-study-time">৩ ঘণ্টা</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-center text-xs sm:text-sm text-gray-500 mt-8">
+      আপনার প্রতিদিন এবং পুরো বছরের জন্য শুভকামনা!
+    </p>
+
+    <div id="toast-notification">এটি একটি টোস্ট বার্তা!</div>
+
+    <div id="completion-modal">
+      <div class="modal-content">
+        <img
+          src="https://placehold.co/100x100/34d399/ffffff?text=🎉"
+          alt="Celebration"
+          class="mx-auto mb-4 rounded-full"
+          onerror="this.src='https://placehold.co/100x100/cccccc/ffffff?text=Error'"
+        />
+        <h3>দারুণ!</h3>
+        <p>আপনি আজকের সমস্ত কাজ সফলভাবে সম্পন্ন করেছেন। আপনার দিনটি শুভ হোক!</p>
+        <button id="modal-close-btn" class="modal-close-btn">বন্ধ করুন</button>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const tasks = [];
+        // Select only task items within routine blocks for timers and completion
+        document
+          .querySelectorAll(".routine-block .task-item-li")
+          .forEach((taskEl) => {
+            tasks.push({
+              id: taskEl.id,
+              element: taskEl,
+              startTimeStr: taskEl.dataset.start,
+              endTimeStr: taskEl.dataset.end,
+              timerInterval: null,
+              timeRemaining: 0,
+              duration: 0,
+              timerDisplayElement: taskEl.querySelector(".task-timer-display"),
+            });
+          });
+
+        const toastNotification = document.getElementById("toast-notification");
+        const completionModal = document.getElementById("completion-modal");
+        const modalCloseBtn = document.getElementById("modal-close-btn");
+        const progressBar = document.getElementById("daily-progress-bar");
+        const progressText = document.getElementById("progress-text");
+        const calendarContainer = document.getElementById(
+          "yearly-plan-calendar"
+        );
+        const suggestedStudyTimeEl = document.getElementById(
+          "suggested-study-time"
+        );
+        const overdueReportList = document.getElementById(
+          "overdue-report-list"
+        );
+        const noOverduePlaceholder = document.getElementById(
+          "no-overdue-placeholder"
+        );
+        const dailyYearlyGoalsList = document.getElementById(
+          "daily-yearly-goals-list"
+        );
+
+        const tabButtons = document.querySelectorAll(".tab-button");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        let toastTimeout;
+        let globalTimerInterval;
+
+        const motivationalMessages = {
+          "task-fajr-namaz": "ফজরের নামাজ আদায়ে দিনটি সুন্দরভাবে শুরু হোক!",
+          "task-fajr-quran": "কোরআন তিলাওয়াত আপনার আত্মাকে প্রশান্তি দিক।",
+          "task-fajr-walk": "সকালের ব্যায়াম আপনাকে সারাদিন সতেজ রাখবে।",
+          "task-fajr-breakfast": "স্বাস্থ্যকর নাস্তা দিনের জন্য শক্তি যোগাবে।",
+          "task-fajr-study": "সকালের পড়াশোনায় মনোযোগ বৃদ্ধি পায়। দারুণ!",
+          "task-morning-study": "জ্ঞান অর্জনের পথে আরও এক ধাপ এগিয়ে গেলেন!",
+          "task-noon-namaz": "যোহরের নামাজ কাজের মাঝে এনে দেয় প্রশান্তি।",
+          "task-noon-lunch": "দুপুরের খাবার ও বিশ্রাম আপনাকে নতুন শক্তি দেবে।",
+          "task-noon-study": "অধ্যবসায় সাফল্যের চাবিকাঠি। চালিয়ে যান!",
+          "task-afternoon-namaz": "আসরের নামাজ আপনাকে আল্লাহর নিকটবর্তী করুক।",
+          "task-afternoon-study": "বিকেলের পড়াশোনাও খুব ফলপ্রসূ হতে পারে!",
+          "task-afternoon-webdev":
+            "ওয়েব ডেভেলপমেন্টে আরও এক ধাপ পারদর্শিতা অর্জন করলেন!",
+          "task-night-namaz": "এশার নামাজ দিনের সকল ক্লান্তি দূর করে দিক।",
+          "task-night-webdev":
+            "প্রতিদিনের ছোট ছোট চেষ্টাই বড় সাফল্যের দিকে নিয়ে যায়।",
+          "task-night-dinner": "পরিবারের সাথে রাতের খাবার উপভোগ করুন।",
+          "task-night-sleep-prep":
+            "শান্তিপূর্ণ ঘুমের প্রস্তুতি একটি সুন্দর দিনের সমাপ্তি।",
+        };
+        const yearlyLearningPlan = [
+          {
+            month: "জুন ২০২৫",
+            year: 2025,
+            monthNum: 5,
+            learnings: [
+              { category: "অর্থনীতি", items: ["গল্পে অর্থনীতি"] },
+              {
+                category: "ভাষা",
+                items: ["ইংরেজি: মৌলিক ব্যাকরণ ও শব্দভাণ্ডার"],
+              },
+              {
+                category: "দক্ষতা",
+                items: ["MERN স্ট্যাক: HTML ও CSS এর মৌলিক বিষয়াদি"],
+              },
+            ],
+          },
+          {
+            month: "জুলাই ২০২৫",
+            year: 2025,
+            monthNum: 6,
+            learnings: [
+              {
+                category: "অর্থনীতি",
+                items: ["একটি অর্থনীতি কীভাবে বৃদ্ধি পায় এবং মন্দায় কী ঘটে"],
+              },
+              {
+                category: "যোগাযোগ",
+                items: ["বন্ধুত্ব ও প্রতিপত্তি (ডেল কার্নেগী) - প্রথম অংশ"],
+              },
+              {
+                category: "দক্ষতা",
+                items: ["MERN স্ট্যাক: JavaScript এর মৌলিক বিষয়াদি"],
+              },
+            ],
+          },
+          {
+            month: "আগস্ট ২০২৫",
+            year: 2025,
+            monthNum: 7,
+            learnings: [
+              {
+                category: "অর্থনীতি",
+                items: ["ডলারের খেলা এবং রাষ্ট্রীয় দেউলিয়াত্বের রহস্য"],
+              },
+              { category: "ভাষা", items: ["আরবি: বর্ণমালা ও প্রাথমিক পঠন"] },
+              {
+                category: "দক্ষতা",
+                items: ["ওয়ার্ডপ্রেস: পরিচিতি ও বেসিক কাস্টমাইজেশন"],
+              },
+            ],
+          },
+          {
+            month: "সেপ্টেম্বর ২০২৫",
+            year: 2025,
+            monthNum: 8,
+            learnings: [
+              {
+                category: "বিশ্ব রাজনীতি",
+                items: ["প্রিজনার্স অফ জিওগ্রাফি - প্রথম ভাগ"],
+              },
+              {
+                category: "এআই শিক্ষা",
+                items: ["প্রম্পট ইঞ্জিনিয়ারিং: ভূমিকা ও মৌলিক ধারণা"],
+              },
+              {
+                category: "দক্ষতা",
+                items: ["MERN স্ট্যাক: Node.js ও Express.js এর পরিচিতি"],
+              },
+            ],
+          },
+          {
+            month: "অক্টোবর ২০২৫",
+            year: 2025,
+            monthNum: 9,
+            learnings: [
+              {
+                category: "মনোবিজ্ঞান - দর্শন",
+                items: ["দ্য আর্ট অফ থিংকিং ক্লিয়ারলি - প্রথম ভাগ"],
+              },
+              {
+                category: "যোগাযোগ",
+                items: [
+                  "গুরুত্বপূর্ণ আলোচনা (কেরি প্যাটারসন প্রমুখ) - প্রথম ভাগ",
+                ],
+              },
+              {
+                category: "দক্ষতা",
+                items: ["MERN স্ট্যাক: React এর মৌলিক বিষয়াদি"],
+              },
+            ],
+          },
+          {
+            month: "নভেম্বর ২০২৫",
+            year: 2025,
+            monthNum: 10,
+            learnings: [
+              {
+                category: "অর্থনীতি",
+                items: ["পার্থ পার্থের অর্থনীতি - প্রথম ভাগ"],
+              },
+              { category: "ভাষা", items: ["ইংরেজি: কথোপকথনের অনুশীলন"] },
+              {
+                category: "দক্ষতা",
+                items: ["MERN স্ট্যাক: MongoDB এর সাথে পরিচিতি"],
+              },
+            ],
+          },
+          {
+            month: "ডিসেম্বর ২০২৫",
+            year: 2025,
+            monthNum: 11,
+            learnings: [
+              {
+                category: "বিশ্ব রাজনীতি",
+                items: ["প্রিজনার্স অফ জিওগ্রাফি - দ্বিতীয় ভাগ"],
+              },
+              {
+                category: "মনোবিজ্ঞান - দর্শন",
+                items: ["দ্য আর্ট অফ থিংকিং ক্লিয়ারলি - দ্বিতীয় ভাগ"],
+              },
+              {
+                category: "এআই শিক্ষা",
+                items: ["প্রম্পট ইঞ্জিনিয়ারিং: বিভিন্ন টুলের ব্যবহার"],
+              },
+            ],
+          },
+          {
+            month: "জানুয়ারি ২০২৬",
+            year: 2026,
+            monthNum: 0,
+            learnings: [
+              {
+                category: "বিশ্ব রাজনীতি",
+                items: ["বিশ্ব রাজনীতির প্লেটো - প্রথম ভাগ"],
+              },
+              { category: "ভাষা", items: ["আরবি: ছোট ছোট বাক্য গঠন"] },
+              {
+                category: "যোগাযোগ",
+                items: ["বন্ধুত্ব ও প্রতিপত্তি (ডেল কার্নেগী) - দ্বিতীয় অংশ"],
+              },
+            ],
+          },
+          {
+            month: "ফেব্রুয়ারি ২০২৬",
+            year: 2026,
+            monthNum: 1,
+            learnings: [
+              {
+                category: "মনোবিজ্ঞান - দর্শন",
+                items: ["দ্য ৪৮ লজ অফ পাওয়ার - নির্বাচিত অংশ"],
+              },
+              {
+                category: "দক্ষতা",
+                items: ["ওয়ার্ডপ্রেস: থিম ও প্লাগইন নিয়ে কাজ"],
+              },
+              {
+                category: "পুনরালোচনা",
+                items: ["অর্থনীতির বইগুলো পুনরালোচনা"],
+              },
+            ],
+          },
+          {
+            month: "মার্চ ২০২৬",
+            year: 2026,
+            monthNum: 2,
+            learnings: [
+              {
+                category: "বিশ্ব রাজনীতি",
+                items: ["বিশ্ব রাজনীতির ১০০ বছর - নির্বাচিত ঘটনা"],
+              },
+              {
+                category: "যোগাযোগ",
+                items: ["অহিংস যোগাযোগ (মার্শাল রোজেনবার্গ) - মূলনীতি"],
+              },
+              {
+                category: "দক্ষতা",
+                items: ["MERN স্ট্যাক: ছোট একটি প্রজেক্ট তৈরি"],
+              },
+            ],
+          },
+          {
+            month: "এপ্রিল ২০২৬",
+            year: 2026,
+            monthNum: 3,
+            learnings: [
+              {
+                category: "মনোবিজ্ঞান - দর্শন",
+                items: ["সোফির জগৎ - ভূমিকা ও প্রথম কয়েকটি অধ্যায়"],
+              },
+              {
+                category: "ভাষা",
+                items: ["ইংরেজি: লেখা ও বোঝার দক্ষতা বৃদ্ধি"],
+              },
+              {
+                category: "এআই শিক্ষা",
+                items: ["প্রম্পট ইঞ্জিনিয়ারিং: অ্যাডভান্সড টেকনিক"],
+              },
+            ],
+          },
+          {
+            month: "মে ২০২৬",
+            year: 2026,
+            monthNum: 4,
+            learnings: [
+              {
+                category: "পুনরালোচনা",
+                items: ["এই বছরের শেখা বিষয়গুলো পুনরালোচনা"],
+              },
+              {
+                category: "পরিকল্পনা",
+                items: ["পরবর্তী বছরের জন্য লক্ষ্য নির্ধারণ"],
+              },
+              {
+                category: "যোগাযোগ",
+                items: [
+                  "টেড টকের মতো কথা বলুন (কারমাইন গ্যালো) - উপস্থাপনা কৌশল",
+                ],
+              },
+            ],
+          },
+        ];
+
+        // Tab switching logic
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            tabButtons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+            const tabId = button.dataset.tab;
+            tabContents.forEach((content) => {
+              content.classList.remove("active");
+              if (content.id === tabId) {
+                content.classList.add("active");
+              }
+            });
+          });
+        });
+
+        function populateCalendar() {
+          if (!calendarContainer) return;
+          calendarContainer.innerHTML = "";
+          yearlyLearningPlan.forEach((monthData) => {
+            const monthCard = document.createElement("div");
+            monthCard.className = "month-card";
+            const monthHeader = document.createElement("h3");
+            monthHeader.className = "month-header";
+            monthHeader.textContent = monthData.month;
+            monthCard.appendChild(monthHeader);
+            const learningListEl = document.createElement("ul");
+            learningListEl.className = "learning-list";
+            monthData.learnings.forEach((learningItem) => {
+              const categoryLi = document.createElement("li");
+              const strong = document.createElement("strong");
+              strong.textContent = learningItem.category + ":";
+              categoryLi.appendChild(strong);
+              const itemsUl = document.createElement("ul");
+              learningItem.items.forEach((itemText) => {
+                const itemLi = document.createElement("li");
+                itemLi.textContent = itemText;
+                itemsUl.appendChild(itemLi);
+              });
+              categoryLi.appendChild(itemsUl);
+              learningListEl.appendChild(categoryLi);
+            });
+            monthCard.appendChild(learningListEl);
+            calendarContainer.appendChild(monthCard);
+          });
+        }
+
+        function updateSuggestedStudyTime() {
+          if (!suggestedStudyTimeEl) return;
+          const currentDate = new Date();
+          const currentMonth = currentDate.getMonth();
+          const currentYear = currentDate.getFullYear();
+          let suggestedTime = "১-২ ঘণ্টা";
+          if (currentYear === 2025 && currentMonth >= 5 && currentMonth <= 10) {
+            suggestedTime = "৩ ঘণ্টা";
+          } else if (currentYear === 2025 && currentMonth === 11) {
+            suggestedTime = "১-২ ঘণ্টা";
+          } else if (currentYear === 2026 && currentMonth <= 4) {
+            suggestedTime = "১-২ ঘণ্টা";
+          } else if (
+            currentYear < 2025 ||
+            (currentYear === 2025 && currentMonth < 5)
+          ) {
+            suggestedTime = "৩ ঘণ্টা (পরিকল্পনা শুরু হলে)";
+          }
+          suggestedStudyTimeEl.textContent = suggestedTime;
+        }
+
+        function populateDailyYearlyGoals() {
+          if (!dailyYearlyGoalsList) return;
+          dailyYearlyGoalsList.innerHTML = "";
+          const currentDate = new Date();
+          const currentMonthNum = currentDate.getMonth();
+          const currentYearNum = currentDate.getFullYear();
+          const currentMonthPlan = yearlyLearningPlan.find(
+            (plan) =>
+              plan.monthNum === currentMonthNum && plan.year === currentYearNum
+          );
+          if (currentMonthPlan && currentMonthPlan.learnings.length > 0) {
+            currentMonthPlan.learnings.forEach((learningCat) => {
+              learningCat.items.forEach((item) => {
+                const listItem = document.createElement("li");
+                listItem.className =
+                  "task-item-li yearly-goal-item p-3 border-l-4 border-amber-500";
+                listItem.innerHTML = `
+                                <div class="task-info">
+                                    <div class="task-icon"><i class="fas fa-star text-amber-500"></i></div>
+                                    <div class="task-text-content">
+                                        <span class="task-text">${item}</span>
+                                        <span class="task-time text-xs">(${learningCat.category})</span>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-500">আজকের ফোকাস</span>`;
+                dailyYearlyGoalsList.appendChild(listItem);
+              });
+            });
+          } else {
+            dailyYearlyGoalsList.innerHTML =
+              '<p class="text-gray-500 text-sm p-2">এই মাসের জন্য কোনো বিশেষ বার্ষিক লক্ষ্য তালিকাভুক্ত নেই অথবা আজকের তারিখ পরিকল্পনার আওতাভুক্ত নয়।</p>';
+          }
+        }
+
+        function showToast(message) {
+          if (toastTimeout) clearTimeout(toastTimeout);
+          toastNotification.textContent = message;
+          toastNotification.classList.add("show");
+          toastTimeout = setTimeout(() => {
+            toastNotification.classList.remove("show");
+          }, 3000);
+        }
+
+        function updateTaskAppearance(taskObj, isComplete) {
+          const markBtn = taskObj.element.querySelector(".mark-btn");
+          const unmarkBtn = taskObj.element.querySelector(".unmark-btn");
+          if (isComplete) {
+            taskObj.element.classList.add("completed");
+            taskObj.element.classList.remove("time-up");
+            if (markBtn) markBtn.classList.add("hidden");
+            if (unmarkBtn) unmarkBtn.classList.remove("hidden");
+            if (taskObj.timerInterval) clearInterval(taskObj.timerInterval);
+          } else {
+            taskObj.element.classList.remove("completed");
+            if (markBtn) markBtn.classList.remove("hidden");
+            if (unmarkBtn) unmarkBtn.classList.add("hidden");
+          }
+        }
+
+        function updateProgressBar() {
+          if (!progressBar || !progressText) return;
+          const totalTasks = tasks.length;
+          if (totalTasks === 0) {
+            progressBar.style.width = "0%";
+            progressBar.textContent = "0%";
+            progressText.textContent = "আজকের জন্য কোনো কাজ তালিকাভুক্ত নেই।";
+            return;
+          }
+          let completedCount = 0;
+          tasks.forEach((task) => {
+            if (localStorage.getItem(task.id) === "true") {
+              completedCount++;
+            }
+          });
+          const percentage =
+            totalTasks > 0
+              ? Math.round((completedCount / totalTasks) * 100)
+              : 0;
+          progressBar.style.width = percentage + "%";
+          progressBar.textContent = percentage + "%";
+          if (percentage === 0) {
+            progressText.textContent = "আজকের কোনো কাজ এখনো সম্পন্ন হয়নি।";
+          } else if (percentage === 100) {
+            progressText.textContent = "দারুণ! আজকের সব কাজ সম্পন্ন হয়েছে।";
+          } else {
+            progressText.textContent = `আজকের ${totalTasks}টি কাজের মধ্যে ${completedCount}টি সম্পন্ন হয়েছে।`;
+          }
+        }
+
+        function checkAllTasksCompleted() {
+          let allDone = true;
+          if (tasks.length === 0) allDone = false;
+          tasks.forEach((task) => {
+            if (localStorage.getItem(task.id) !== "true") {
+              allDone = false;
+            }
+          });
+          if (allDone) {
+            completionModal.classList.add("show");
+          } else {
+            completionModal.classList.remove("show");
+          }
+          updateProgressBar();
+        }
+
+        function parseTime(timeStr) {
+          const [hours, minutes] = timeStr.split(":").map(Number);
+          return hours * 60 + minutes;
+        }
+
+        function formatTime(totalSeconds) {
+          if (totalSeconds < 0) totalSeconds = 0;
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+          return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+            2,
+            "0"
+          )}:${String(seconds).padStart(2, "0")}`;
+        }
+
+        function initializeTaskTimers() {
+          const now = new Date();
+          tasks.forEach((task) => {
+            const taskStartMinutes = parseTime(task.startTimeStr);
+            const taskEndMinutes = parseTime(task.endTimeStr);
+            task.duration = (taskEndMinutes - taskStartMinutes) * 60;
+            if (task.timerDisplayElement) {
+              task.timerDisplayElement.textContent = formatTime(task.duration);
+            }
+            if (localStorage.getItem(task.id) === "true") {
+              updateTaskAppearance(task, true);
+              if (task.timerDisplayElement)
+                task.timerDisplayElement.textContent = "সম্পন্ন";
+            } else if (localStorage.getItem(task.id) === "timeup") {
+              handleTimeUp(task, false); // false to not re-add to report if already there
+            }
+          });
+          startGlobalTimerCheck();
+        }
+
+        function startTaskTimer(task) {
+          if (task.timerInterval) clearInterval(task.timerInterval);
+          if (
+            localStorage.getItem(task.id) === "true" ||
+            localStorage.getItem(task.id) === "timeup"
+          )
+            return;
+          const now = new Date();
+          const taskEndHour = parseInt(task.endTimeStr.split(":")[0]);
+          const taskEndMinute = parseInt(task.endTimeStr.split(":")[1]);
+          const taskEndTime = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            taskEndHour,
+            taskEndMinute,
+            0
+          );
+          task.timeRemaining = Math.max(
+            0,
+            Math.floor((taskEndTime.getTime() - now.getTime()) / 1000)
+          );
+          if (
+            task.timeRemaining <= 0 &&
+            !task.element.classList.contains("completed")
+          ) {
+            if (localStorage.getItem(task.id) !== "timeup") {
+              handleTimeUp(task);
+            }
+            return;
+          }
+          task.timerInterval = setInterval(() => {
+            task.timeRemaining--;
+            if (task.timerDisplayElement) {
+              task.timerDisplayElement.textContent = formatTime(
+                task.timeRemaining
+              );
+            }
+            if (task.timeRemaining <= 0) {
+              handleTimeUp(task);
+            }
+          }, 1000);
+        }
+
+        function handleTimeUp(task, addToReport = true) {
+          clearInterval(task.timerInterval);
+          task.timerInterval = null;
+          if (localStorage.getItem(task.id) === "true") return;
+
+          task.element.classList.add("time-up");
+          task.element.classList.remove("completed");
+          const markBtn = task.element.querySelector(".mark-btn");
+          if (markBtn) {
+            markBtn.disabled = true;
+            markBtn.classList.add("cursor-not-allowed", "bg-gray-400");
+            markBtn.innerHTML = '<i class="fas fa-ban"></i> সময় শেষ';
+          }
+          if (task.timerDisplayElement) {
+            task.timerDisplayElement.textContent = "সময় শেষ";
+            task.timerDisplayElement.classList.add("text-red-600", "font-bold");
+          }
+          localStorage.setItem(task.id, "timeup");
+          if (addToReport) {
+            addToOverdueReport(
+              task.element.querySelector(".task-text").textContent
+            );
+          }
+          updateProgressBar();
+        }
+
+        function addToOverdueReport(taskName) {
+          if (noOverduePlaceholder) noOverduePlaceholder.style.display = "none";
+          // Check if already reported
+          const existingReports = Array.from(
+            overdueReportList.querySelectorAll("li")
+          );
+          if (
+            existingReports.some(
+              (li) => li.textContent.includes(taskName) && !li.id
+            )
+          )
+            return;
+
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `<i class="fas fa-clock mr-2"></i>${taskName}`;
+          overdueReportList.appendChild(listItem);
+        }
+        function loadOverdueTasksFromStorage() {
+          tasks.forEach((task) => {
+            if (localStorage.getItem(task.id) === "timeup") {
+              handleTimeUp(task, true); // Add to report on load
+            }
+          });
+        }
+
+        function startGlobalTimerCheck() {
+          if (globalTimerInterval) clearInterval(globalTimerInterval);
+          globalTimerInterval = setInterval(() => {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            tasks.forEach((task) => {
+              if (
+                localStorage.getItem(task.id) === "true" ||
+                localStorage.getItem(task.id) === "timeup"
+              ) {
+                return;
+              }
+              const taskStartHour = parseInt(task.startTimeStr.split(":")[0]);
+              const taskStartMinute = parseInt(task.startTimeStr.split(":")[1]);
+              const taskEndHour = parseInt(task.endTimeStr.split(":")[0]);
+              const taskEndMinute = parseInt(task.endTimeStr.split(":")[1]);
+              const isWithinTaskTime =
+                (currentHour > taskStartHour ||
+                  (currentHour === taskStartHour &&
+                    currentMinute >= taskStartMinute)) &&
+                (currentHour < taskEndHour ||
+                  (currentHour === taskEndHour &&
+                    currentMinute < taskEndMinute));
+              if (isWithinTaskTime && !task.timerInterval) {
+                startTaskTimer(task);
+              } else if (!isWithinTaskTime && task.timerInterval) {
+                const taskEndTime = new Date(
+                  now.getFullYear(),
+                  now.getMonth(),
+                  now.getDate(),
+                  taskEndHour,
+                  taskEndMinute,
+                  0
+                );
+                if (now.getTime() >= taskEndTime.getTime()) {
+                  handleTimeUp(task);
+                }
+              } else if (
+                !isWithinTaskTime &&
+                !task.timerInterval &&
+                now.getTime() >
+                  new Date(
+                    now.getFullYear(),
+                    now.getMonth(),
+                    now.getDate(),
+                    taskEndHour,
+                    taskEndMinute,
+                    0
+                  ).getTime()
+              ) {
+                if (
+                  localStorage.getItem(task.id) !== "true" &&
+                  localStorage.getItem(task.id) !== "timeup"
+                ) {
+                  handleTimeUp(task);
+                }
+              }
+            });
+          }, 5000);
+        }
+
+        tasks.forEach((taskObj) => {
+          const markBtn = taskObj.element.querySelector(".mark-btn");
+          const unmarkBtn = taskObj.element.querySelector(".unmark-btn");
+          if (markBtn) {
+            markBtn.addEventListener("click", () => {
+              if (markBtn.disabled) return;
+              updateTaskAppearance(taskObj, true);
+              localStorage.setItem(taskObj.id, "true");
+              if (motivationalMessages[taskObj.id]) {
+                showToast(motivationalMessages[taskObj.id]);
+              }
+              checkAllTasksCompleted();
+              if (taskObj.timerDisplayElement)
+                taskObj.timerDisplayElement.textContent = "সম্পন্ন";
+            });
+          }
+          if (unmarkBtn) {
+            unmarkBtn.addEventListener("click", () => {
+              updateTaskAppearance(taskObj, false);
+              localStorage.removeItem(taskObj.id); // Remove status to allow re-timing
+              const associatedMarkBtn =
+                taskObj.element.querySelector(".mark-btn");
+              if (associatedMarkBtn) {
+                associatedMarkBtn.disabled = false;
+                associatedMarkBtn.classList.remove(
+                  "cursor-not-allowed",
+                  "bg-gray-400"
+                );
+                associatedMarkBtn.innerHTML =
+                  '<i class="fas fa-check"></i> সম্পন্ন';
+              }
+              taskObj.element.classList.remove("time-up");
+              if (taskObj.timerDisplayElement) {
+                taskObj.timerDisplayElement.classList.remove(
+                  "text-red-600",
+                  "font-bold"
+                );
+                taskObj.timerDisplayElement.textContent = formatTime(
+                  taskObj.duration
+                ); // Reset timer display
+              }
+              // Remove from overdue report if it was there
+              const reportItems = overdueReportList.querySelectorAll("li");
+              reportItems.forEach((item) => {
+                if (
+                  item.textContent.includes(
+                    taskObj.element.querySelector(".task-text").textContent
+                  )
+                ) {
+                  item.remove();
+                }
+              });
+              if (
+                overdueReportList.children.length === 1 &&
+                overdueReportList.children[0].id === "no-overdue-placeholder"
+              ) {
+                // This check is a bit fragile. Better to check if only placeholder is left.
+              } else if (
+                overdueReportList.querySelectorAll(
+                  "li:not(#no-overdue-placeholder)"
+                ).length === 0 &&
+                noOverduePlaceholder
+              ) {
+                noOverduePlaceholder.style.display = "list-item";
+              }
+
+              initializeTaskTimers();
+              checkAllTasksCompleted();
+            });
+          }
+        });
+
+        if (modalCloseBtn)
+          modalCloseBtn.addEventListener("click", () =>
+            completionModal.classList.remove("show")
+          );
+        if (completionModal)
+          completionModal.addEventListener("click", (event) => {
+            if (event.target === completionModal)
+              completionModal.classList.remove("show");
+          });
+
+        // SortableJS for Daily View Cards
+        const dailyViewContainer = document.getElementById(
+          "daily-view-draggable-container"
+        );
+        if (dailyViewContainer) {
+          const sortableDaily = Sortable.create(dailyViewContainer, {
+            animation: 150,
+            ghostClass: "sortable-ghost",
+            handle: ".card-header", // Optionally, make only headers draggable handles
+            store: {
+              get: function (sortable) {
+                const order = localStorage.getItem("dailyViewCardOrder");
+                return order ? order.split("|") : [];
+              },
+              set: function (sortable) {
+                const order = sortable.toArray();
+                localStorage.setItem("dailyViewCardOrder", order.join("|"));
+              },
+            },
+            onUpdate: function () {
+              // Order is saved by the store's set function
+            },
+          });
+        }
+        // SortableJS for Reports & Misc View Cards
+        const reportsMiscContainer = document.getElementById(
+          "reports-misc-draggable-container"
+        );
+        if (reportsMiscContainer) {
+          const sortableReports = Sortable.create(reportsMiscContainer, {
+            animation: 150,
+            ghostClass: "sortable-ghost",
+            handle: ".card-header",
+            store: {
+              get: function (sortable) {
+                const order = localStorage.getItem("reportsMiscCardOrder");
+                return order ? order.split("|") : [];
+              },
+              set: function (sortable) {
+                const order = sortable.toArray();
+                localStorage.setItem("reportsMiscCardOrder", order.join("|"));
+              },
+            },
+          });
+        }
+
+        // Initial setup
+        populateCalendar();
+        updateSuggestedStudyTime();
+        populateDailyYearlyGoals();
+        initializeTaskTimers();
+        loadOverdueTasksFromStorage(); // Load overdue tasks after timers are initialized
+        checkAllTasksCompleted();
+      });
+    </script>
+  </body>
+</html>
